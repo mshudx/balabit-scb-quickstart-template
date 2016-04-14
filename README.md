@@ -1,2 +1,33 @@
-# balabit-scb-quickstart-template
-This repository contains Azure Resource Manager template that will deploy Balabit Shell Control Box virtual machine within a test environment.
+# About
+This repository contains Azure Resource Manager template that will deploy Balabit Shell Control Box virtual machine within a test environment:
+* Azure Virtual Network with two subnets:
+  * subnet-ad
+  * subnet-scb
+* Windows Server 2012 R2 Datacenter configured as Domain Controller
+* The vnet is configured to use the domain controller
+* all the neccessary things like storage account, network security groups, private and public ip addresses
+
+# Deployment
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmshudx%2Fbalabit-scb-quickstart-template%2Fmaster%2Fazuredeploy.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fmshudx%2Fbalabit-scb-quickstart-template%2Fmaster%2Fazuredeploy.json" target="_blank"><img src="http://armviz.io/visualizebutton.png"/></a>
+ 
+To deploy use the links above and follow the deployment wizard, alternatively you can use one of the command line tools like azure-cli: 
+
+```
+azure group create --name "scb-test" --location "West Europe"
+azure group deployment create --resource-group scb-test --name "scb-test-deployment" --template-file .\azuredeploy.json --parameters-file .\azuredeploy.parameters.json --mode Incremental
+```
+
+# What is Balabit Shell Control Box?
+[Shell Control Box (SCB)](https://azure.microsoft.com/en-us/marketplace/partners/balabit/balabit-shell-control-box/) is a turnkey activity monitoring appliance that controls access to remote servers, virtual desktops, or networking devices, and records the activities of the users accessing these systems. For example, it records as the system administrators configure your database servers, or your third-party provider manages your web-server. The recorded audit trails can be replayed like a movie to review the events exactly as they occurred. The content of the audit trails is indexed to make searching for events and automatic reporting possible. SCB is especially suited to supervise privileged-user access as mandated by many compliance requirements, like the PCI-DSS or ISO 2700x. SCB records all administrative traffic (including configuration changes, executed commands, etc.) into audit trails. All data is stored in encrypted, timestamped and signed files, preventing any manipulation. In case of any problems (server misconfiguration, unexpected shutdown, etc.) the circumstances of the event are readily available in the audit trails, thus the cause of the incident can be easily identified. SCB enables enterprises to audit the activity of privileged users across their on-premise and Azure cloud by showing "who is doing what" to prevent insider threats and data breaches.
+
+# Configuration prerequisites
+- [] A valid license from Balabit (mailto:sales@balabit.com)
+- [] Optional: For alerting, the address of your SMTP server (Enter 0.0.0.0 to turn alerting off)
+ 
+# Template parameters
+_coming soon_
+
+# Getting started
+_coming soon_
+    

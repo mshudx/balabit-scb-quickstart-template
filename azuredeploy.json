@@ -1,0 +1,491 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the storage account"
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "The type of the Storage Account created"
+      },
+      "defaultValue": "Standard_LRS"
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Virtual Network to Create"
+      },
+      "defaultValue": "scb-test-vnet"
+    },
+    "virtualNetworkAddressRange": {
+      "type": "string",
+      "metadata": {
+        "description": "The address range of the new VNET in CIDR format"
+      },
+      "defaultValue": "10.0.0.0/16"
+    },
+    "adVMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Domain Controller VM"
+      },
+      "defaultValue": "vm-ad"
+    },
+    "scbVMName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the SCB VM"
+      },
+      "defaultValue": "vm-scb"
+    },
+    "adSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the subnet created in the new VNET"
+      },
+      "defaultValue": "subnet-ad"
+    },
+    "scbSubnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the subnet created in the new VNET"
+      },
+      "defaultValue": "subnet-scb"
+    },
+    "adSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The address range of the subnet created in the new VNET"
+      },
+      "defaultValue": "10.0.1.0/24"
+    },
+    "scbSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The address range of the subnet created in the new VNET"
+      },
+      "defaultValue": "10.0.0.0/24"
+    },
+    "adNicIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "The IP address of the new AD VM"
+      },
+      "defaultValue": "10.0.1.4"
+    },
+    "scbNicIPAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "The IP address of the new AD VM"
+      },
+      "defaultValue": "10.0.0.4"
+    },
+    "publicIPAddressType": {
+      "type": "string",
+      "allowedValues": [
+        "Dynamic",
+        "Static"
+      ],
+      "metadata": {
+        "description": "The type of the public IP address used by the Shell Control Box VM"
+      },
+      "defaultValue": "Static"
+    },
+    "dnsPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The DNS prefix for the public IP address used by the Shell Control Box VM"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Administrator of the new VMs and Domain"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The password for the Administrator account of the new VMs and Domain"
+      }
+    },
+    "adVMSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_D1_v2",
+        "Standard_DS1",
+        "Standard_D2_v2",
+        "Standard_DS2",
+        "Standard_D3_v2",
+        "Standard_DS3",
+        "Standard_D4_v2",
+        "Standard_DS4",
+        "Standard_D11_v2",
+        "Standard_DS11",
+        "Standard_D12_v2",
+        "Standard_DS12",
+        "Standard_D13_v2",
+        "Standard_DS13",
+        "Standard_D14_v2",
+        "Standard_DS14"
+      ],
+      "metadata": {
+        "description": "The size of the VM Created"
+      },
+      "defaultValue": "Standard_D2_v2"
+    },
+    "scbVMSize": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_D1_v2",
+        "Standard_DS1",
+        "Standard_D2_v2",
+        "Standard_DS2",
+        "Standard_D3_v2",
+        "Standard_DS3",
+        "Standard_D4_v2",
+        "Standard_DS4",
+        "Standard_D11_v2",
+        "Standard_DS11",
+        "Standard_D12_v2",
+        "Standard_DS12",
+        "Standard_D13_v2",
+        "Standard_DS13",
+        "Standard_D14_v2",
+        "Standard_DS14"
+      ],
+      "metadata": {
+        "description": "The size of the VM Created"
+      },
+      "defaultValue": "Standard_D2_v2"
+    },
+    "domainName": {
+      "type": "string",
+      "metadata": {
+        "description": "The FQDN of the AD Domain created "
+      }
+    },
+    "assetLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "The location of resources such as templates and DSC modules that the script is dependent upon"
+      },
+      "defaultValue": "https://raw.githubusercontent.com/mshudx/balabit-scb-quickstart-template/master/"
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "adImageSKU": "2012-R2-Datacenter",
+    "adImagePublisher": "MicrosoftWindowsServer",
+    "adImageOffer": "WindowsServer",
+    "scbImageVersion":  "latest",
+    "scbImageSKU": "scb",
+    "scbImagePublisher": "balabit",
+    "scbImageOffer": "balabit-shell-control-box",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+    "adSubnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('adSubnetName'))]",
+    "adNicName": "[concat(parameters('adVMName'), '-nic')]",
+    "adNicId": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]",
+    "adIPConfigName": "adIPConfig",
+    "adIPConfigID": "[concat(variables('adNicId'), '/ipConfigurations/', variables('adIPConfigName'))]",
+    "adDataDiskSize": 1000,
+    "scbNicName": "[concat(parameters('scbVMName'), '-nic')]",
+    "scbNicId": "[resourceId('Microsoft.Network/networkInterfaces', variables('scbNicName'))]",
+    "scbSubnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('scbSubnetName'))]",
+    "scbIPConfigName": "scbIpConfig",
+    "scbIPConfigID": "[concat(variables('adNicId'), '/ipConfigurations/', variableS('scbIPConfigName'))]",
+    "vnetTemplateUri": "[concat(parameters('assetLocation'), 'vnet.json')]",
+    "vnetwithDNSTemplateUri": "[concat(parameters('assetLocation'), 'vnet-with-dns-server.json')]",
+    "adModulesURL": "[concat(parameters('assetLocation'), 'CreateADPDC.ps1.zip')]",
+    "adConfigurationFunction": "CreateADPDC.ps1\\CreateADPDC",
+    "publicIPAddressName": "[concat(parameters('scbVMName'), '-pip')]",
+    "subnets": [
+      {
+        "name": "[parameters('scbSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('scbSubnetAddressPrefix')]"
+        }
+      },
+      {
+        "name": "[parameters('adSubnetName')]",
+        "properties": {
+          "addressPrefix": "[parameters('adSubnetAddressPrefix')]"
+        }
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[parameters('storageAccountName')]",
+      "apiVersion": "2015-06-15",
+      "location": "[variables('location')]",
+      "properties": {
+        "accountType": "[parameters('storageAccountType')]"
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[parameters('publicIPAddressType')]",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('dnsPrefix')]"
+        }
+      }
+    },
+    {
+      "name": "VNet",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vnetTemplateUri')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[variables('location')]"
+          },
+          "virtualNetworkName": {
+            "value": "[parameters('virtualNetworkName')]"
+          },
+          "virtualNetworkAddressRange": {
+            "value": "[parameters('virtualNetworkAddressRange')]"
+          },
+          "subnets": {
+            "value": "[variables('subnets')]"
+          }
+        }
+      }
+    },
+    {
+      "name": "[variables('adNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "Microsoft.Resources/deployments/VNet"
+      ],
+      "apiVersion": "2016-03-30",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[variables('adIPConfigName')]",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('adNicIPAddress')]",
+              "subnet": {
+                "id": "[variables('adSubnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('scbNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "Microsoft.Resources/deployments/VNet"
+      ],
+      "apiVersion": "2016-03-30",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[variables('scbIPConfigName')]",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('scbNicIPAddress')]",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+              },
+              "subnet": {
+                "id": "[variables('scbSubnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('adVMName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('adVMSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('adVMName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('adImagePublisher')]",
+            "offer": "[variables('adImageOffer')]",
+            "sku": "[variables('adImageSKU')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(parameters('adVMName'), '-osdisk')]",
+            "vhd": {
+              "uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/vhds/', parameters('adVMName'), '-osdisk.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          },
+          "dataDisks": [
+            {
+              "vhd": {
+                "uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/vhds/', parameters('adVMName'), '-datadisk1.vhd')]"
+              },
+              "name": "[concat(parameters('adVMName'), '-datadisk1')]",
+              "caching": "None",
+              "createOption": "Empty",
+              "diskSizeGB": "[variables('adDataDiskSize')]",
+              "lun": 0
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "type": "extensions",
+          "name": "[concat(parameters('adVMName'), '/CreateADForest')]",
+          "apiVersion": "2015-06-15",
+          "location": "[variables('location')]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', parameters('adVMName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.14",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "ModulesUrl": "[variables('adModulesURL')]",
+              "ConfigurationFunction": "[variables('adConfigurationFunction')]",
+              "Properties": {
+                "DomainName": "[parameters('domainName')]",
+                "AdminCreds": {
+                  "UserName": "[parameters('adminUsername')]",
+                  "Password": "PrivateSettingsRef:AdminPassword"
+                }
+              }
+            },
+            "protectedSettings": {
+              "Items": {
+                "AdminPassword": "[parameters('adminPassword')]"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('scbVMName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('scbNicName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('scbVMSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('scbVMName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('scbImagePublisher')]",
+            "offer": "[variables('scbImageOffer')]",
+            "sku": "[variables('scbImageSKU')]",
+            "version": "[variables('scbImageVersion')]"
+          },
+          "osDisk": {
+            "name": "[concat(parameters('scbVMName'), '-osdisk')]",
+            "vhd": {
+              "uri": "[concat('http://', parameters('storageAccountName'),'.blob.core.windows.net/vhds/', parameters('scbVMName'), '-osdisk.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('scbNicName'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "UpdateVNetDNS",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('adVMName'), '/extensions/CreateADForest')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('vnetwithDNSTemplateUri')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[variables('location')]"
+          },
+          "virtualNetworkName": {
+            "value": "[parameters('virtualNetworkName')]"
+          },
+          "virtualNetworkAddressRange": {
+            "value": "[parameters('virtualNetworkAddressRange')]"
+          },
+          "subnets": {
+            "value": "[variables('subnets')]"
+          },
+          "DNSServerAddress": {
+            "value": [
+              "[parameters('adNicIPAddress')]"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
