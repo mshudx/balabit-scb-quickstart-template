@@ -21,18 +21,11 @@
       },
       "defaultValue": "10.0.0.0/16"
     },
-    "subnetName": {
-      "type": "string",
+    "subnets": {
+      "type": "array",
       "metadata": {
-        "Description": "The name of the subnet created in the new VNET"
+        "Description": "Subnet definitions"
       }
-    },
-    "subnetRange": {
-      "type": "string",
-      "metadata": {
-        "Description": "The address range of the subnet created in the new VNET"
-      },
-      "defaultValue": "10.0.0.0/24"
     },
     "DNSServerAddress": {
       "type": "array",
@@ -56,14 +49,7 @@
         "dhcpOptions": {
           "dnsServers": "[parameters('DNSServerAddress')]"
         },
-        "subnets": [
-          {
-            "name": "[parameters('subnetName')]",
-            "properties": {
-              "addressPrefix": "[parameters('subnetRange')]"
-            }
-          }
-        ]
+        "subnets": "[parameters('subnets')]"
       }
     }
   ]
