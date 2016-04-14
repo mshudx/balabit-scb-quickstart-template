@@ -193,6 +193,11 @@
     "scbImageVersion":  "latest",
     "scbImageSKU": "scb",
     "scbImagePublisher": "balabit",
+    "scbPlan": {
+      "name": "scb",
+      "publisher": "balabit",
+      "product": "balabit-shell-control-box"
+    },
     "scbImageOffer": "balabit-shell-control-box",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
     "adSubnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('adSubnetName'))]",
@@ -421,6 +426,7 @@
         "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
         "[resourceId('Microsoft.Network/networkInterfaces', variables('scbNicName'))]"
       ],
+      "plan": "[variables('scbPlan')]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('scbVMSize')]"
@@ -444,7 +450,8 @@
             },
             "caching": "ReadWrite",
             "createOption": "FromImage"
-          }        },
+          }
+        },
         "networkProfile": {
           "networkInterfaces": [
             {
@@ -459,7 +466,8 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('adVMName'), '/extensions/CreateADForest')]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('adVMName'), '/extensions/CreateADForest')]",
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('scbVMName'))]"
       ],
       "properties": {
         "mode": "Incremental",
