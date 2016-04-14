@@ -302,7 +302,8 @@
       "type": "Microsoft.Network/networkInterfaces",
       "location": "[variables('location')]",
       "dependsOn": [
-        "Microsoft.Resources/deployments/VNet"
+        "Microsoft.Resources/deployments/VNet",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
       ],
       "apiVersion": "2016-03-30",
       "properties": {
